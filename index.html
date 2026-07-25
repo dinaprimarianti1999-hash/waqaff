@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="id">
+ <head><script>window["__codeletBootstrap__"]=JSON.parse('{"A":"A","B":"20260723-05-e9a76f4"}');</script><script src="/_sdk/e358eac22bd01364.telemetry_sdk.js" integrity="sha512-KPxp3rw4K8Nu9ceWJc3gyM7srgaZxiFWOVbyu260EYzzAqdz10mfo5xyXrCx+wEKtGo77JbtmwXvFLbwrGzwvw=="></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drag and Match Waqaf</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <script src="/_sdk/c939c145c3c74230.editing_sdk.js" integrity="sha512-jh2pv/gl9Gzzn5dxfzwQO4wkqtnAQIim+LIUDYfVu2cdqPkQV2MqbjsDUW5IYbrSZFjRlOBrIWzlvWDXQYxOjg=="></script>
+  <style>
+    :root {
+      --navy: #09233f;
+      --navy-deep: #06172a;
+      --emerald: #078569;
+      --emerald-dark: #046852;
+      --gold: #f3bd46;
+      --cream: #fffdf5;
+      --ink: #17324d;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      width: 100%;
+      min-height: calc(100 * min(var(--vh, 1vh), 1vh));
+      font-family: Calibri, Aptos, sans-serif;
+      color: var(--ink);
+      overflow-x: hidden;
+      background: var(--navy-deep);
+    }
+
+    button, [draggable="true"] { touch-action: none; }
+    button:focus-visible, [draggable="true"]:focus-visible {
+      outline: 4px solid #f8d984;
+      outline-offset: 3px;
+    }
+
+    .game-shell {
+      width: 100%;
+      min-height: calc(100 * min(var(--vh, 1vh), 1vh));
+      position: relative;
+      overflow: hidden;
+      padding: 24px;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(15, 137, 108, .35), transparent 30%),
+        radial-gradient(circle at 90% 88%, rgba(243, 189, 70, .17), transparent 28%),
+        #06172a;
+    }
+
+    .game-shell::before,
+    .game-shell::after {
+      content: "";
+      position: absolute;
+      width: 250px;
+      height: 250px;
+      opacity: .18;
+      pointer-events: none;
+      background-image:
+        linear-gradient(30deg, transparent 44%, #f3bd46 45%, #f3bd46 55%, transparent 56%),
+        linear-gradient(150deg, transparent 44%, #f3bd46 45%, #f3bd46 55%, transparent 56%);
+      background-size: 46px 80px;
+      transform: rotate(30deg);
+    }
+    .game-shell::before { top: -80px; left: -72px; }
+    .game-shell::after { right: -80px; bottom: -88px; }
+
+    .app-content {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+
+    .glass-panel {
+      background: rgba(255, 253, 245, .96);
+      border: 1px solid rgba(243, 189, 70, .55);
+      box-shadow: 0 18px 45px rgba(0, 0, 0, .23);
+    }
+
+    .game-title {
+      font-family: Poppins, sans-serif;
+      letter-spacing: -.04em;
+    }
+
+    .reveal-up {
+      animation: revealUp .65s both;
+    }
+    .delay-1 { animation-delay: .1s; }
+    .delay-2 { animation-delay: .2s; }
+    .delay-3 { animation-delay: .3s; }
+
+    @keyframes revealUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .quran-mark {
+      width: 72px;
+      height: 72px;
+      display: grid;
+      place-items: center;
+      color: #f3bd46;
+      background: #0b3558;
+      border: 2px solid rgba(243, 189, 70, .72);
+      border-radius: 24px 24px 8px 8px;
+      box-shadow: inset 0 0 0 6px rgba(255,255,255,.05);
+    }
+
+    .timer-box {
+      min-width: 125px;
+      font-family: Poppins, sans-serif;
+      font-variant-numeric: tabular-nums;
+      background: #071d33;
+      color: #fffdf5;
+      border: 1px solid rgba(243, 189, 70, .7);
+      box-shadow: 0 7px 0 rgba(0,0,0,.18);
+    }
+
+    .game-board {
+      display: grid;
+      grid-template-columns: minmax(220px, .88fr) minmax(280px, 1.12fr);
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .board-column {
+      padding: 18px;
+      border-radius: 24px;
+      min-height: 460px;
+    }
+
+    .cards-stack, .targets-stack {
+      display: grid;
+      gap: 11px;
+      margin-top: 16px;
+    }
+
+    .waqaf-card {
+      min-height: 58px;
+      width: 100%;
+      position: relative;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 17px;
+      border: 2px solid rgba(255,255,255,.64);
+      border-radius: 17px;
+      color: #fff;
+      font-family: Poppins, sans-serif;
+      font-weight: 700;
+      cursor: grab;
+      box-shadow: 0 6px 0 rgba(0,0,0,.15);
+      user-select: none;
+      transition: transform .18s ease, box-shadow .18s ease, opacity .2s ease, background .25s ease;
+    }
+
+    .waqaf-card:hover { transform: translateY(-2px); box-shadow: 0 9px 0 rgba(0,0,0,.12); }
+    .waqaf-card.dragging { opacity: .96; cursor: grabbing; transform: rotate(-3deg) scale(1.04); z-index: 50; box-shadow: 0 18px 30px rgba(0,0,0,.28); }
+    .waqaf-card.matched { background: #0b9c61 !important; cursor: default; opacity: .93; }
+    .waqaf-card.matched .card-hint { display: none; }
+
+    .waqaf-symbol {
+      font-size: 30px;
+      line-height: 1;
+      font-family: "Times New Roman", serif;
+      direction: rtl;
+    }
+    .card-hint { font-size: 12px; opacity: .88; letter-spacing: .04em; }
+
+    .drop-target {
+      min-height: 58px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 16px;
+      border: 2px dashed #9ab5a9;
+      border-radius: 17px;
+      background: rgba(255,255,255,.82);
+      transition: .2s ease;
+    }
+    .drop-target.is-over { border-color: var(--gold); background: #fff4d6; transform: scale(1.015); }
+    .drop-target.is-filled { border-style: solid; border-color: #1cad72; background: #e8f8ef; }
+    .target-number {
+      width: 27px; height: 27px; flex: none;
+      display: grid; place-items: center;
+      color: #0b6e58; background: #d9f3e8;
+      border-radius: 50%; font-family: Poppins, sans-serif; font-size: 12px; font-weight: 800;
+    }
+
+    .feedback-pop {
+      animation: pop .48s ease both;
+    }
+    @keyframes pop {
+      0% { transform: scale(.4); opacity: 0; }
+      55% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .shake { animation: shake .45s ease; }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
+    }
+
+    .confetti {
+      position: fixed;
+      top: -20px;
+      z-index: 100;
+      width: 10px;
+      height: 18px;
+      border-radius: 3px;
+      pointer-events: none;
+      animation: fall 2.8s linear forwards;
+    }
+    @keyframes fall {
+      to { transform: translate(var(--drift), calc(100 * min(var(--vh, 1vh), 1vh))) rotate(780deg); opacity: 0; }
+    }
+
+    .level-two {
+      display: none;
+      margin-top: 24px;
+      animation: revealUp .65s both;
+    }
+    .level-two.show { display: block; }
+
+    .ayah-card {
+      background: #0b3558;
+      color: #fffdf5;
+      border: 1px solid rgba(243, 189, 70, .62);
+    }
+    .ayah-text {
+      font-family: "Times New Roman", serif;
+      font-size: clamp(25px, 3vw, 42px);
+      direction: rtl;
+      line-height: 2;
+      text-align: center;
+    }
+    .ayah-sign {
+      color: #ffd36b;
+      background: rgba(243,189,70,.12);
+      border-radius: 8px;
+      padding: 0 6px;
+      cursor: pointer;
+      transition: .2s ease;
+    }
+    .ayah-sign:hover, .ayah-sign:focus-visible { background: #f3bd46; color: #09233f; outline: none; }
+
+    .challenge-note { display: none; }
+    .challenge-note.show { display: block; animation: revealUp .3s ease both; }
+
+    @media (max-width: 760px) {
+      .game-shell { padding: 14px; }
+      .game-board { grid-template-columns: 1fr; gap: 16px; }
+      .board-column { min-height: auto; padding: 14px; }
+      .waqaf-card, .drop-target { min-height: 62px; }
+      .timer-box { min-width: 100px; }
+    }
+  </style>
+  <script src="/_sdk/935a53bc2e11fb8d.data_sdk.js" type="text/javascript" integrity="sha512-qr2oyPnEys1WebcOABaRh6hG77r5PWpqeWW6JTKbRJqly/INsfBi31CVNlTmHqjgeLpkVmmHZJUdxSx/32tOFQ=="></script>
+  <script src="/_sdk/6030e540d4419216.resizing_sdk.js" type="text/javascript" integrity="sha512-b5KWzyoXsbWP4smq4sftIi6Kts4YVBpBsz0BwCViwbBJkK64a3/Z6ZMdWA+qnplNcXw4mhZeqvQi3mOosiRJdA=="></script>
+ </head>
+ <body data-template-id="__page-root">
+  <div class="game-shell">
+   <div class="app-content">
+    <header class="reveal-up flex flex-col gap-4 rounded-[28px] bg-[#09233f] p-5 text-white shadow-2xl sm:flex-row sm:items-center sm:justify-between">
+     <div class="flex items-center gap-4">
+      <div class="quran-mark" aria-hidden="true"><i data-lucide="book-open" style="width:38px;height:38px"></i>
+      </div>
+      <div>
+       <p data-template-id="header-kicker" class="canva-text mb-1 text-xs font-semibold uppercase tracking-[.18em]"></p>
+       <h1 data-template-id="page-title" class="canva-text game-title text-3xl font-extrabold leading-tight sm:text-4xl"></h1>
+       <p data-template-id="page-subtitle" class="canva-text mt-1 text-base text-[#d8eee6]"></p>
+      </div>
+     </div>
+     <div class="timer-box rounded-2xl px-4 py-3 text-center">
+      <div data-template-id="timer-label" class="canva-text text-[11px] font-bold uppercase tracking-[.14em] text-[#f3bd46]"></div>
+      <div id="timer-display" class="text-3xl font-extrabold" aria-live="polite">
+       01:00
+      </div>
+     </div>
+    </header>
+    <main class="mt-5">
+     <section class="reveal-up delay-1 grid gap-4 lg:grid-cols-[1.2fr_.8fr]">
+      <div data-template-id="instruction-panel" class="canva-panel glass-panel rounded-3xl p-5">
+       <div class="flex gap-3">
+        <div class="mt-1 text-[#078569]" aria-hidden="true">
+         <i data-lucide="hand" style="width:29px;height:29px"></i>
+        </div>
+        <div>
+         <h2 data-template-id="instruction-title" class="canva-text game-title text-xl font-bold"></h2>
+         <p data-template-id="instruction-text" class="canva-text mt-1 leading-relaxed"></p>
+        </div>
+       </div>
+      </div>
+      <aside data-template-id="score-panel" class="canva-panel flex items-center justify-between rounded-3xl bg-[#078569] p-5 text-white shadow-xl">
+       <div>
+        <p data-template-id="score-label" class="canva-text text-sm font-semibold uppercase tracking-wider text-[#d9f3e8]"></p>
+        <div class="mt-1 flex items-center gap-2"><span aria-hidden="true" class="text-3xl">⭐</span> <span id="score-display" class="font-[Poppins] text-4xl font-extrabold" aria-live="polite">0</span> <span class="font-[Poppins] text-lg font-bold">/ 100</span>
+        </div>
+       </div><button id="reset-btn" data-template-id="reset-button" class="canva-button rounded-xl bg-[#f3bd46] px-4 py-3 font-[Poppins] text-sm font-bold text-[#09233f] transition hover:scale-105 active:scale-95" type="button"></button>
+      </aside>
+     </section>
+     <section class="reveal-up delay-2 mt-5">
+      <div class="game-board">
+       <section data-template-id="cards-panel" class="canva-panel board-column bg-[#0b3558] shadow-xl">
+        <div class="flex items-center gap-3"><span class="grid h-9 w-9 place-items-center rounded-xl bg-[#f3bd46] text-[#09233f]" aria-hidden="true"><i data-lucide="grip-vertical" style="width:20px;height:20px"></i></span>
+         <div>
+          <h2 data-template-id="cards-title" class="canva-text game-title text-lg font-bold text-white"></h2>
+          <p data-template-id="cards-helper" class="canva-text text-sm text-[#cde7dd]"></p>
+         </div>
+        </div>
+        <div id="cards-stack" class="cards-stack"><button class="waqaf-card" id="card-mim" data-answer="must-stop" type="button" aria-label="Kartu tanda waqaf mim"> <span class="waqaf-symbol">م</span><span class="card-hint">SERET</span> </button> <button class="waqaf-card" id="card-la" data-answer="no-stop" type="button" aria-label="Kartu tanda waqaf la"> <span class="waqaf-symbol">لا</span><span class="card-hint">SERET</span> </button> <button class="waqaf-card" id="card-jim" data-answer="choice" type="button" aria-label="Kartu tanda waqaf jim"> <span class="waqaf-symbol">ج</span><span class="card-hint">SERET</span> </button> <button class="waqaf-card" id="card-qif" data-answer="prefer-stop" type="button" aria-label="Kartu tanda waqaf qif"> <span class="waqaf-symbol">قلى</span><span class="card-hint">SERET</span> </button> <button class="waqaf-card" id="card-sila" data-answer="prefer-continue" type="button" aria-label="Kartu tanda waqaf sila"> <span class="waqaf-symbol">صلى</span><span class="card-hint">SERET</span> </button> <button class="waqaf-card" id="card-muanaqah" data-answer="muanaqah" type="button" aria-label="Kartu tanda waqaf muanaqah"> <span class="waqaf-symbol">ۛ</span><span class="card-hint">SERET</span> </button>
+        </div>
+       </section>
+       <section data-template-id="targets-panel" class="canva-panel board-column glass-panel">
+        <div class="flex items-center gap-3"><span class="grid h-9 w-9 place-items-center rounded-xl bg-[#078569] text-white" aria-hidden="true"><i data-lucide="target" style="width:20px;height:20px"></i></span>
+         <div>
+          <h2 data-template-id="targets-title" class="canva-text game-title text-lg font-bold"></h2>
+          <p data-template-id="targets-helper" class="canva-text text-sm text-[#52706c]"></p>
+         </div>
+        </div>
+        <div class="targets-stack">
+         <div class="drop-target" data-target="must-stop">
+          <span class="target-number">1</span>
+          <p data-template-id="target-must-stop" class="canva-text font-semibold"></p>
+         </div>
+         <div class="drop-target" data-target="no-stop">
+          <span class="target-number">2</span>
+          <p data-template-id="target-no-stop" class="canva-text font-semibold"></p>
+         </div>
+         <div class="drop-target" data-target="choice">
+          <span class="target-number">3</span>
+          <p data-template-id="target-choice" class="canva-text font-semibold"></p>
+         </div>
+         <div class="drop-target" data-target="prefer-stop">
+          <span class="target-number">4</span>
+          <p data-template-id="target-prefer-stop" class="canva-text font-semibold"></p>
+         </div>
+         <div class="drop-target" data-target="prefer-continue">
+          <span class="target-number">5</span>
+          <p data-template-id="target-prefer-continue" class="canva-text font-semibold"></p>
+         </div>
+         <div class="drop-target" data-target="muanaqah">
+          <span class="target-number">6</span>
+          <p data-template-id="target-muanaqah" class="canva-text font-semibold"></p>
+         </div>
+        </div>
+       </section>
+      </div>
+     </section>
+     <section class="reveal-up delay-3 mt-5 grid gap-4 md:grid-cols-[1.2fr_.8fr]">
+      <aside data-template-id="rules-panel" class="canva-panel rounded-3xl border border-[#d5ad56] bg-[#fff9e8] p-5">
+       <div class="flex gap-3"><i data-lucide="users" class="mt-1 text-[#b57b12]" style="width:26px;height:26px"></i>
+        <div>
+         <h2 data-template-id="rules-title" class="canva-text game-title text-lg font-bold"></h2>
+         <p data-template-id="rules-text" class="canva-text mt-1 whitespace-pre-line leading-relaxed"></p>
+        </div>
+       </div>
+      </aside>
+      <div id="status-box" data-template-id="status-panel" class="canva-panel flex min-h-[125px] items-center justify-center rounded-3xl bg-[#e9f5f0] p-5 text-center">
+       <div>
+        <div id="status-icon" class="mb-1 text-3xl" aria-hidden="true">
+         ✨
+        </div>
+        <p id="status-message" class="font-[Poppins] font-bold text-[#0b6e58]" aria-live="polite">Mulai seret kartu ke pasangan yang tepat!</p>
+       </div>
+      </div>
+     </section>
+     <section id="win-panel" class="level-two" aria-live="polite">
+      <div data-template-id="win-banner" class="canva-banner rounded-[28px] bg-[#078569] p-6 text-center text-white shadow-2xl">
+       <div class="text-4xl" aria-hidden="true">
+        🎉
+       </div>
+       <h2 data-template-id="win-title" class="canva-text game-title mt-2 text-2xl font-extrabold"></h2>
+       <p data-template-id="win-text" class="canva-text mx-auto mt-2 max-w-3xl text-[#dff8ec]"></p>
+      </div>
+      <div data-template-id="challenge-panel" class="canva-panel mt-5 rounded-[28px] bg-[#fffdf5] p-5 shadow-xl">
+       <div class="flex flex-col gap-5 lg:flex-row lg:items-center">
+        <div class="flex-1">
+         <p data-template-id="challenge-kicker" class="canva-text font-[Poppins] text-sm font-bold uppercase tracking-[.14em] text-[#b57b12]"></p>
+         <h2 data-template-id="challenge-title" class="canva-text game-title mt-1 text-2xl font-extrabold text-[#09233f]"></h2>
+         <p data-template-id="challenge-instruction" class="canva-text mt-2 leading-relaxed"></p>
+        </div>
+        <div class="ayah-card w-full rounded-2xl p-5 lg:w-[53%]">
+         <p data-template-id="ayah-label" class="canva-text mb-2 text-center text-sm text-[#f8d984]"></p>
+         <p class="ayah-text">إِنَّ ٱللَّهَ مَعَ ٱلصَّٰبِرِينَ <button class="ayah-sign" type="button" data-sign="mim" aria-label="Tanda mim">م</button> وَٱسْتَعِينُوا۟ بِٱلصَّبْرِ <button class="ayah-sign" type="button" data-sign="la" aria-label="Tanda la">لا</button> وَٱلصَّلَوٰةِ</p>
+        </div>
+       </div>
+       <div id="challenge-note" class="challenge-note mt-4 rounded-2xl border border-[#d9b35a] bg-[#fff6d9] p-4 text-center font-semibold text-[#5b4515]"></div>
+      </div>
+     </section>
+    </main>
+   </div>
+  </div>
+  <script>
+    const cards = [...document.querySelectorAll('.waqaf-card')];
+    const targets = [...document.querySelectorAll('.drop-target')];
+    const cardsStack = document.getElementById('cards-stack');
+    const scoreDisplay = document.getElementById('score-display');
+    const timerDisplay = document.getElementById('timer-display');
+    const statusBox = document.getElementById('status-box');
+    const statusIcon = document.getElementById('status-icon');
+    const statusMessage = document.getElementById('status-message');
+    const winPanel = document.getElementById('win-panel');
+    const resetBtn = document.getElementById('reset-btn');
+
+    let draggedCard = null;
+    let pointerOffsetX = 0;
+    let pointerOffsetY = 0;
+    let score = 0;
+    let matched = 0;
+    let seconds = 60;
+    let timerInterval = null;
+    let hasStarted = false;
+
+    const originalOrder = cards.map(card => card.id);
+
+    function playTone(type) {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const context = new AudioContext();
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        oscillator.connect(gain);
+        gain.connect(context.destination);
+        oscillator.type = type === 'success' ? 'sine' : 'sawtooth';
+        oscillator.frequency.value = type === 'success' ? 880 : 150;
+        gain.gain.setValueAtTime(.08, context.currentTime);
+        gain.gain.exponentialRampToValueAtTime(.001, context.currentTime + (type === 'success' ? .24 : .35));
+        oscillator.start();
+        oscillator.stop(context.currentTime + (type === 'success' ? .24 : .35));
+      } catch (e) {}
+    }
+
+    function updateTimer() {
+      const minutes = String(Math.floor(seconds / 60)).padStart(2, '0');
+      const remaining = String(seconds % 60).padStart(2, '0');
+      timerDisplay.textContent = minutes + ':' + remaining;
+    }
+
+    function startTimer() {
+      if (hasStarted || matched === cards.length) return;
+      hasStarted = true;
+      timerInterval = setInterval(() => {
+        if (seconds > 0) {
+          seconds -= 1;
+          updateTimer();
+        } else {
+          clearInterval(timerInterval);
+          timerInterval = null;
+          showStatus('⏰', 'Waktu habis! Diskusikan kembali pasangan tanda waqafnya.');
+        }
+      }, 1000);
+    }
+
+    function showStatus(icon, message, wrong = false) {
+      statusIcon.textContent = icon;
+      statusMessage.textContent = message;
+      statusBox.classList.remove('shake');
+      void statusBox.offsetWidth;
+      if (wrong) statusBox.classList.add('shake');
+    }
+
+    function getTargetAtPoint(x, y) {
+      return targets.find(target => {
+        const rect = target.getBoundingClientRect();
+        return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+      });
+    }
+
+    function clearTargetHighlight() {
+      targets.forEach(target => target.classList.remove('is-over'));
+    }
+
+    function handlePointerDown(event) {
+      const card = event.currentTarget;
+      if (card.classList.contains('matched') || seconds === 0) return;
+      event.preventDefault();
+      startTimer();
+      draggedCard = card;
+      const rect = card.getBoundingClientRect();
+      pointerOffsetX = event.clientX - rect.left;
+      pointerOffsetY = event.clientY - rect.top;
+      card.setPointerCapture(event.pointerId);
+      card.classList.add('dragging');
+      card.style.width = rect.width + 'px';
+      card.style.position = 'fixed';
+      card.style.left = rect.left + 'px';
+      card.style.top = rect.top + 'px';
+      card.style.zIndex = '60';
+      document.body.appendChild(card);
+    }
+
+    function handlePointerMove(event) {
+      if (!draggedCard) return;
+      draggedCard.style.left = (event.clientX - pointerOffsetX) + 'px';
+      draggedCard.style.top = (event.clientY - pointerOffsetY) + 'px';
+      clearTargetHighlight();
+      const activeTarget = getTargetAtPoint(event.clientX, event.clientY);
+      if (activeTarget && !activeTarget.classList.contains('is-filled')) activeTarget.classList.add('is-over');
+    }
+
+    function returnCard(card) {
+      card.classList.remove('dragging');
+      card.removeAttribute('style');
+      const cardOrder = originalOrder.indexOf(card.id);
+      const nextCard = [...cardsStack.children].find(item => originalOrder.indexOf(item.id) > cardOrder);
+      cardsStack.insertBefore(card, nextCard || null);
+    }
+
+    function handlePointerUp(event) {
+      if (!draggedCard) return;
+      const card = draggedCard;
+      const target = getTargetAtPoint(event.clientX, event.clientY);
+      clearTargetHighlight();
+
+      if (target && !target.classList.contains('is-filled') && card.dataset.answer === target.dataset.target) {
+        card.classList.remove('dragging');
+        card.removeAttribute('style');
+        target.appendChild(card);
+        target.classList.add('is-filled');
+        card.classList.add('matched');
+        card.style.width = 'auto';
+        matched += 1;
+        score += 10;
+        scoreDisplay.textContent = score;
+        playTone('success');
+        showStatus('✔', 'Benar! Pasangan tanda waqaf sudah tepat.');
+        statusIcon.classList.add('feedback-pop');
+        setTimeout(() => statusIcon.classList.remove('feedback-pop'), 500);
+
+        if (matched === cards.length) completeGame();
+      } else {
+        playTone('error');
+        showStatus('✖', 'Belum tepat. Kartu kembali ke tempat semula — coba lagi!', true);
+        returnCard(card);
+      }
+      draggedCard = null;
+    }
+
+    function completeGame() {
+      clearInterval(timerInterval);
+      showStatus('🌟', 'Hebat! Kamu berhasil mendapatkan 100 poin.');
+      winPanel.classList.add('show');
+      launchConfetti();
+      setTimeout(() => winPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 250);
+    }
+
+    function launchConfetti() {
+      const colors = ['#f3bd46', '#18af7d', '#ffffff', '#ef5d5d', '#5dc2e7'];
+      for (let i = 0; i < 80; i++) {
+        const piece = document.createElement('span');
+        piece.className = 'confetti';
+        piece.style.left = Math.random() * 100 + '%';
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.setProperty('--drift', (Math.random() * 260 - 130) + 'px');
+        piece.style.animationDelay = (Math.random() * .55) + 's';
+        document.body.appendChild(piece);
+        setTimeout(() => piece.remove(), 3700);
+      }
+    }
+
+    function resetGame() {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      hasStarted = false;
+      seconds = 60;
+      score = 0;
+      matched = 0;
+      updateTimer();
+      scoreDisplay.textContent = '0';
+      winPanel.classList.remove('show');
+      targets.forEach(target => {
+        target.classList.remove('is-filled', 'is-over');
+        const number = target.querySelector('.target-number');
+        const label = target.querySelector('p');
+        target.innerHTML = '';
+        target.appendChild(number);
+        target.appendChild(label);
+      });
+      originalOrder.forEach(id => {
+        const card = document.getElementById(id);
+        card.classList.remove('matched', 'dragging');
+        card.removeAttribute('style');
+        cardsStack.appendChild(card);
+      });
+      showStatus('✨', 'Mulai seret kartu ke pasangan yang tepat!');
+      document.getElementById('challenge-note').classList.remove('show');
+    }
+
+    cards.forEach(card => {
+      card.addEventListener('pointerdown', handlePointerDown);
+      card.addEventListener('pointermove', handlePointerMove);
+      card.addEventListener('pointerup', handlePointerUp);
+      card.addEventListener('pointercancel', () => {
+        if (draggedCard) {
+          returnCard(draggedCard);
+          draggedCard = null;
+          clearTargetHighlight();
+        }
+      });
+    });
+
+    resetBtn.addEventListener('click', resetGame);
+
+    document.querySelectorAll('.ayah-sign').forEach(sign => {
+      sign.addEventListener('click', () => {
+        const note = document.getElementById('challenge-note');
+        if (sign.dataset.sign === 'mim') {
+          note.textContent = 'Tanda م (Waqaf Lazim): berhenti lebih utama dan dianjurkan untuk menjaga makna bacaan.';
+        } else {
+          note.textContent = 'Tanda لا (Laa): tidak boleh berhenti pada tanda ini karena dapat mengubah atau memutus makna.';
+        }
+        note.classList.add('show');
+      });
+    });
+
+    updateTimer();
+    lucide.createIcons();
+  </script>
+ </body>
+</html>
